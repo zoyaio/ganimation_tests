@@ -329,9 +329,9 @@ class Solver(Utils):
         regular_image_transform = T.Compose(regular_image_transform)
 
         G_path = sorted(glob.glob(os.path.join(
-            self.animation_models_dir, '*G.ckpt')), key=self.numericalSort)[0]
-        self.G.load_state_dict(torch.load(G_path, map_location=f'cuda:{self.gpu_id}'))
-        self.G = self.G.cuda(0)
+            self.animation_models_dir, '*G.ckpt')), key=self.numericalSort)[-1]
+        self.G.load_state_dict(torch.load(G_path, map_location=self.device))
+        self.G = self.G.to(self.device)
 
         reference_expression_images = []
 
@@ -347,59 +347,61 @@ class Solver(Utils):
                     image_path = os.path.join(
                         self.animation_attribute_images_dir, splitted_lines[0])
                     input_images[idx, :] = regular_image_transform(
-                        Image.open(image_path)).cuda()
+                        Image.open(image_path).convert('RGB'))
                     reference_expression_images.append(splitted_lines[0])
                     targets[idx, :] = torch.Tensor(
                         np.array(list(map(lambda x: float(x)/5., splitted_lines[1::]))))
 
-        if mode == 'animate_random_batch':
-            animation_batch_size = 7
+            targets = targets.to(self.device)
+            input_images = input_images.to(self.device)
 
-            self.data_iter = iter(self.data_loader)
-            images_to_animate, _ = next(self.data_iter)
-            images_to_animate = images_to_animate[0:animation_batch_size].cuda(
-            )
+            if mode == 'animate_random_batch':
+                animation_batch_size = 7
 
-            for target_idx in range(targets.size(0)):
-                targets_au = targets[target_idx, :].unsqueeze(
-                    0).repeat(animation_batch_size, 1).cuda()
-                resulting_images_att, resulting_images_reg = self.G(
-                    images_to_animate, targets_au)
-
-                resulting_images = self.imFromAttReg(
-                    resulting_images_att, resulting_images_reg, images_to_animate).cuda()
-
-                save_images = - \
-                    torch.ones((animation_batch_size + 1)
-                               * 2, 3, 128, 128).cuda()
-
-                save_images[1:animation_batch_size+1] = images_to_animate
-                save_images[animation_batch_size+1] = input_images[target_idx]
-                save_images[animation_batch_size +
-                            2:(animation_batch_size + 1)*2] = resulting_images
-
-                save_image((save_images+1)/2, os.path.join(self.animation_results_dir,
-                                                           reference_expression_images[target_idx]))
-
-        if mode == 'animate_image':
-
-            images_to_animate_path = glob.glob(
-                self.animation_images_dir + '/*')
-
-            for image_path in images_to_animate_path:
-                image_to_animate = regular_image_transform(
-                    Image.open(image_path)).unsqueeze(0).cuda()
+                self.data_iter = iter(self.data_loader)
+                images_to_animate, _ = next(self.data_iter)
+                images_to_animate = images_to_animate[0:animation_batch_size].to(self.device)
 
                 for target_idx in range(targets.size(0)):
-                    targets_au = targets[target_idx, :].unsqueeze(0).cuda()
+                    targets_au = targets[target_idx, :].unsqueeze(
+                        0).repeat(animation_batch_size, 1)
                     resulting_images_att, resulting_images_reg = self.G(
-                        image_to_animate, targets_au)
-                    resulting_image = self.imFromAttReg(
-                        resulting_images_att, resulting_images_reg, image_to_animate).cuda()
+                        images_to_animate, targets_au)
 
-                    save_image((resulting_image+1)/2, os.path.join(self.animation_results_dir,
-                                                                   image_path.split('/')[-1].split('.')[0]
-                                                                   + '_' + reference_expression_images[target_idx]))
+                    resulting_images = self.imFromAttReg(
+                        resulting_images_att, resulting_images_reg, images_to_animate)
+
+                    save_images = - \
+                        torch.ones((animation_batch_size + 1)
+                                   * 2, 3, 128, 128).to(self.device)
+
+                    save_images[1:animation_batch_size+1] = images_to_animate
+                    save_images[animation_batch_size+1] = input_images[target_idx]
+                    save_images[animation_batch_size +
+                                2:(animation_batch_size + 1)*2] = resulting_images
+
+                    save_image((save_images+1)/2, os.path.join(self.animation_results_dir,
+                                                               reference_expression_images[target_idx]))
+
+            if mode == 'animate_image':
+
+                images_to_animate_path = glob.glob(
+                    self.animation_images_dir + '/*')
+
+                for image_path in images_to_animate_path:
+                    image_to_animate = regular_image_transform(
+                        Image.open(image_path).convert('RGB')).unsqueeze(0).to(self.device)
+
+                    for target_idx in range(targets.size(0)):
+                        targets_au = targets[target_idx, :].unsqueeze(0)
+                        resulting_images_att, resulting_images_reg = self.G(
+                            image_to_animate, targets_au)
+                        resulting_image = self.imFromAttReg(
+                            resulting_images_att, resulting_images_reg, image_to_animate)
+
+                        save_image((resulting_image+1)/2, os.path.join(self.animation_results_dir,
+                                                                       image_path.split('/')[-1].split('.')[0]
+                                                                       + '_' + reference_expression_images[target_idx]))
 
         # """ Code to modify single Action Units """
 

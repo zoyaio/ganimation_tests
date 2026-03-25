@@ -7,30 +7,31 @@ from torch.backends import cudnn
 
 
 def main(config):
-    cudnn.benchmark = True  # Improves runtime if the input size is constant
+    cudnn.benchmark = True
 
     config.outputs_dir = os.path.join('experiments', config.outputs_dir)
-
     config.log_dir = os.path.join(config.outputs_dir, config.log_dir)
-    config.model_save_dir = os.path.join(
-        config.outputs_dir, config.model_save_dir)
+    config.model_save_dir = os.path.join(config.outputs_dir, config.model_save_dir)
     config.sample_dir = os.path.join(config.outputs_dir, config.sample_dir)
     config.result_dir = os.path.join(config.outputs_dir, config.result_dir)
 
-    data_loader = get_loader(config.image_dir, config.attr_path, config.c_dim,
-                             config.image_size, config.batch_size, config.mode,
-                             config.num_workers)
-
-    config_dict = vars(config)
-    solver = Solver(data_loader, config_dict)
-
     if config.mode == 'train':
+        data_loader = get_loader(config.image_dir, config.attr_path, config.c_dim,
+                                 config.image_size, config.batch_size, config.mode,
+                                 config.num_workers)
+        config_dict = vars(config)
+        solver = Solver(data_loader, config_dict)
         initialize_train_directories(config)
         solver.train()
-    elif config.mode == 'animation':
-        initialize_animation_directories(config)
-        solver.animation()
 
+    elif config.mode == 'animation':
+        data_loader = get_loader(config.animation_images_dir, config.animation_attributes_path, config.c_dim,
+                                 config.image_size, config.batch_size, config.mode,
+                                 config.num_workers)
+        config_dict = vars(config)
+        solver = Solver(data_loader, config_dict)
+        initialize_animation_directories(config)
+        solver.animation(config.animation_mode)
 
 def initialize_train_directories(config):
     if not os.path.exists('experiments'):
