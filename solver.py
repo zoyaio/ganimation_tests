@@ -202,7 +202,7 @@ class Solver(Utils):
         g_loss_saturation_1 = attention_mask.mean()
         g_loss_smooth1 = self.smooth_loss(attention_mask)
 
-        if not self.use_virtual:
+        if not self.use_virtual: # type: ignore
             g_loss_rec = torch.nn.functional.l1_loss(self.x_real, x_rec)
             g_loss_saturation_2 = reconstructed_attention_mask.mean()
             g_loss_smooth2 = self.smooth_loss(reconstructed_attention_mask)
@@ -328,6 +328,7 @@ class Solver(Utils):
             mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)))
         regular_image_transform = T.Compose(regular_image_transform)
 
+        # gets path of model, leaev unchanged
         G_path = sorted(glob.glob(os.path.join(
             self.animation_models_dir, '*G.ckpt')), key=self.numericalSort)[-1]
         self.G.load_state_dict(torch.load(G_path, map_location=self.device))
@@ -358,9 +359,12 @@ class Solver(Utils):
             if mode == 'animate_random_batch':
                 animation_batch_size = 7
 
-                self.data_iter = iter(self.data_loader)
-                images_to_animate, _ = next(self.data_iter)
-                images_to_animate = images_to_animate[0:animation_batch_size].to(self.device)
+                all_image_paths = sorted(glob.glob(self.animation_images_dir + '/*'))
+                sampled_paths = random.sample(all_image_paths, min(animation_batch_size, len(all_image_paths)))
+                images_to_animate = torch.stack([
+                    regular_image_transform(Image.open(p).convert('RGB')) for p in sampled_paths
+                ]).to(self.device)
+                animation_batch_size = images_to_animate.size(0)
 
                 for target_idx in range(targets.size(0)):
                     targets_au = targets[target_idx, :].unsqueeze(
@@ -402,6 +406,30 @@ class Solver(Utils):
                         save_image((resulting_image+1)/2, os.path.join(self.animation_results_dir,
                                                                        image_path.split('/')[-1].split('.')[0]
                                                                        + '_' + reference_expression_images[target_idx]))
+
+            if mode == 'animate_single_au':
+                images_to_animate_path = glob.glob(self.animation_images_dir + '/*')
+                sweep_values = np.linspace(0.0, 1.0, self.au_sweep_steps)
+
+                for image_path in images_to_animate_path:
+                    image_to_animate = regular_image_transform(
+                        Image.open(image_path).convert('RGB')).unsqueeze(0).to(self.device)
+
+                    sweep_frames = []
+                    for val in sweep_values:
+                        au_vector = torch.zeros(1, self.c_dim).to(self.device)
+                        au_vector[0, self.au_idx] = float(val)
+                        att, reg = self.G(image_to_animate, au_vector)
+                        result = self.imFromAttReg(att, reg, image_to_animate)
+                        sweep_frames.append(result)
+
+                    # Save grid: original + all sweep steps in a single row
+                    grid = torch.cat([image_to_animate] + sweep_frames, dim=0)
+                    img_name = os.path.basename(image_path).split('.')[0]
+                    save_image((grid + 1) / 2,
+                               os.path.join(self.animation_results_dir,
+                                            f'{img_name}_au{self.au_idx}_sweep.jpg'),
+                               nrow=len(sweep_frames) + 1)
 
         # """ Code to modify single Action Units """
 

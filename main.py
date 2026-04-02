@@ -32,6 +32,11 @@ def main(config):
         solver = Solver(data_loader, config_dict)
         initialize_animation_directories(config)
         solver.animation(config.animation_mode)
+    elif config.mode == 'animate_single_au':
+        config_dict = vars(config)
+        solver = Solver(None, config_dict)
+        initialize_animation_directories(config)
+        solver.animation('animate_single_au')
 
 def initialize_train_directories(config):
     if not os.path.exists('experiments'):

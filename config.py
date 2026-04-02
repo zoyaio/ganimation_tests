@@ -56,7 +56,7 @@ def get_config():
     # Miscellaneous.
     parser.add_argument('--num_workers', type=int, default=4)
     parser.add_argument('--mode', type=str, default='train',
-                        choices=['train', 'animation'])
+                        choices=['train', 'animation', 'animate_single_au'])
     parser.add_argument('--use_tensorboard', type=str2bool, default=True)
     parser.add_argument('--num_sample_targets', type=int, default=4,
                         help="number of targets to use in the samples visualization")
@@ -84,6 +84,14 @@ def get_config():
                         default='animations/eric_andre/results')
     parser.add_argument('--animation_mode', type=str, default='animate_image',
                         choices=['animate_image', 'animate_random_batch'])
+
+    # Single AU sweep configuration.
+    parser.add_argument('--au_idx', type=int, default=6,
+                        help='index (0-16) of the AU to sweep. '
+                             'AU order: AU01 AU02 AU04 AU05 AU06 AU07 AU09 AU10 '
+                             'AU12 AU14 AU15 AU17 AU20 AU23 AU25 AU26 AU45')
+    parser.add_argument('--au_sweep_steps', type=int, default=8,
+                        help='number of steps to sweep the AU from 0 to max intensity')
 
     # Step size.
     parser.add_argument('--log_step', type=int, default=10)
