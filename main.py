@@ -7,7 +7,7 @@ from torch.backends import cudnn
 
 
 def main(config):
-    cudnn.benchmark = TPrue
+    cudnn.benchmark = True
 
     config.outputs_dir = os.path.join('experiments', config.outputs_dir)
     config.log_dir = os.path.join(config.outputs_dir, config.log_dir)
