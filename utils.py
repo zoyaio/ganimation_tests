@@ -87,7 +87,7 @@ class Utils:
     def create_labels(self, data_iter):
         """Return samples for visualization"""
         x, c = [], []
-        x_data, c_data = data_iter.next()
+        x_data, c_data = next(data_iter)
 
         for i in range(self.num_sample_targets):
             x.append(x_data[i].repeat(

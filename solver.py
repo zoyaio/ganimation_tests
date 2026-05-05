@@ -40,10 +40,8 @@ class Solver(Utils):
         self.global_counter = 0
 
         if self.resume_iters:
-            self.first_iteration = self.resume_iters
             self.restore_model(self.resume_iters)
-        else:
-            self.first_iteration = 0
+        self.first_iteration = 0
 
         self.start_time = time.time()
 
