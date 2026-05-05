@@ -141,8 +141,11 @@ class Utils:
             self.model_save_dir, '{}-{}-G_optim.ckpt'.format(resume_iters, self.first_epoch))
         D_optim_path = os.path.join(
             self.model_save_dir, '{}-{}-D_optim.ckpt'.format(resume_iters, self.first_epoch))
-        self.d_optimizer.load_state_dict(torch.load(D_optim_path))
-        self.g_optimizer.load_state_dict(torch.load(G_optim_path))
+        if os.path.exists(G_optim_path) and os.path.exists(D_optim_path):
+            self.d_optimizer.load_state_dict(torch.load(D_optim_path))
+            self.g_optimizer.load_state_dict(torch.load(G_optim_path))
+        else:
+            print('Optimizer checkpoints not found, starting with fresh optimizers.')
 
     def numericalSort(self, value):
         numbers = re.compile(r'(\d+)')

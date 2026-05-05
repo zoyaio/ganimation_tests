@@ -1,5 +1,4 @@
 data/*
-experiments/*
 __pycache__
 .vscode
 animations/eric_andre/pretrained_models/*
@@ -8,3 +7,5 @@ openface_utils
 FS2K
 animations/eric_andre/images_to_animate/*
 zoya_tests
+
+experiments/experiment1/models/
