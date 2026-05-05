@@ -307,8 +307,9 @@ class Solver(Utils):
         et = str(datetime.timedelta(seconds=et))[:-7]
         log = "Elapsed [{}],  [{}/{}], Epoch [{}/{}]".format(
             et, self.iteration+1, len(self.data_loader), self.epoch+1, self.num_epochs)
-        for tag, value in self.loss_visualization.items():
-            log += ", {}: {:.4f}".format(tag, value)
+        for tag in ['D/loss', 'G/loss']:
+            if tag in self.loss_visualization:
+                log += ", {}: {:.4f}".format(tag, self.loss_visualization[tag])
         print(log)
 
         if self.use_tensorboard:
