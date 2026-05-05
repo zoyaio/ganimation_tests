@@ -82,7 +82,7 @@ class Solver(Utils):
                     self.g_lr, self.d_lr))
 
             # Save the last model
-            self.save_models()
+            self.save_models(self.iteration, self.epoch)
 
             self.first_iteration = 0  # Next epochs start from 0
 

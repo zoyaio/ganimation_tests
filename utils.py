@@ -1,6 +1,5 @@
 import torch
 import torch.nn.functional as F
-from tensorboardX import SummaryWriter
 
 from model import Generator
 from model import Discriminator
@@ -32,6 +31,7 @@ class Utils:
 
     def build_tensorboard(self):
         """Build a tensorboard logger."""
+        from tensorboardX import SummaryWriter
         from logger import Logger
         self.logger = Logger(self.log_dir)
         self.writer = SummaryWriter(logdir=self.log_dir)
